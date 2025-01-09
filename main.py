@@ -11,9 +11,9 @@ BAI_URL = "https://docs.google.com/spreadsheets/d/1f7kaFuhCv6S_eX4EuIrlhZFDR7W5M
 
 response_mapping = {
     "Not at all": 0,
-    "Several Days": 1,
-    "More than half the days": 2,
-    "Nearly every day": 3,
+    "Mildly, but it didn't bother me much": 1,
+    "Moderately - it wasn't pleasant at times": 2,
+    "Severely - it bothered me a lot": 3
 }
 
 # Load phrases for BAI
