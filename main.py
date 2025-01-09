@@ -55,12 +55,15 @@ def analyze_bai(client_name: str):
             total_score = sum(response_mapping.get(r.strip(), 0) for r in responses)
             interpretation = get_bai_interpretation(total_score)
 
-            primary_impression = (
-                f"The results indicate {client_name} has {interpretation.lower()}."
-                if interpretation == "Low Anxiety (0-21)"
-                else f"The analysis suggests {client_name} may be experiencing {interpretation.lower()}."
-            )
+            if interpretation == "Low Anxiety (0-21)":
+                return {
+                    "client_name": client_name,
+                    "total_score": total_score,
+                    "interpretation": interpretation,
+                    "message": f"The results indicate {client_name} has low anxiety levels, with no further concerns."
+                }
 
+            primary_impression = f"The analysis suggests {client_name} may be experiencing {interpretation.lower()}."
             additional_impressions = [
                 get_random_phrase("Anxiety", used_phrases),
                 get_random_phrase("Trauma & PTSD", used_phrases),
