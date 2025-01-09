@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import requests
 import csv
 import json
+import random
 from mangum import Mangum
 
 app = FastAPI()
@@ -15,10 +16,18 @@ response_mapping = {
     "Nearly every day": 3,
 }
 
-def get_random_phrase(condition):
-    with open("phrases_bai.json", "r") as f:
-        phrases = json.load(f)
-    return random.choice(phrases[condition])
+# Load phrases for BAI
+with open("phrases_bai.json", "r") as f:
+    phrases = json.load(f)
+
+def get_random_phrase(condition, used_phrases):
+    available_phrases = [p for p in phrases[condition] if p not in used_phrases]
+    if available_phrases:
+        phrase = random.choice(available_phrases)
+        used_phrases.add(phrase)
+        return phrase
+    else:
+        return "No more unique phrases available."
 
 def get_bai_interpretation(score):
     if score <= 21:
@@ -35,7 +44,9 @@ def analyze_bai(client_name: str):
     data = response.text.splitlines()
 
     reader = csv.reader(data)
-    header = next(reader)  # Skip header row
+    header = next(reader)
+
+    used_phrases = set()
 
     for row in reader:
         name = row[-1].strip()
@@ -45,35 +56,25 @@ def analyze_bai(client_name: str):
             interpretation = get_bai_interpretation(total_score)
 
             primary_impression = (
-                "The client may have mild or no anxiety concerns."
+                f"The results indicate {client_name} has {interpretation.lower()}."
                 if interpretation == "Low Anxiety (0-21)"
-                else "The client might be experiencing anxiety or related concerns."
+                else f"The analysis suggests {client_name} may be experiencing {interpretation.lower()}."
             )
 
-            additional_impressions = []
-            suggested_tools = []
-
-            if interpretation != "Low Anxiety (0-21)":
-                additional_impressions = [
-                    get_random_phrase("Anxiety"),
-                    get_random_phrase("Trauma & PTSD"),
-                    get_random_phrase("Youth Mental Health Test"),
-                ]
-                suggested_tools = [
-                    "Tools for Anxiety",
-                    "Tools for Trauma & PTSD",
-                    "Tools for Youth Mental Health Test",
-                ]
+            additional_impressions = [
+                get_random_phrase("Anxiety", used_phrases),
+                get_random_phrase("Trauma & PTSD", used_phrases),
+                get_random_phrase("Youth Mental Health Test", used_phrases)
+            ]
 
             return {
                 "client_name": client_name,
                 "total_score": total_score,
                 "interpretation": interpretation,
                 "primary_impression": primary_impression,
-                "additional_impressions": additional_impressions,
-                "suggested_tools": suggested_tools,
+                "additional_impressions": additional_impressions
             }
 
-    return {"error": f"Client '{client_name}' not found."}
+    raise HTTPException(status_code=404, detail=f"Client '{client_name}' not found.")
 
 handler = Mangum(app)
