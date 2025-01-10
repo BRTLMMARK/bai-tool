@@ -53,46 +53,54 @@ def health_check():
     return {"status": "ok", "message": "BAI Tool API is running and accessible."}
 
 @app.get("/analyze")
-def analyze_bai(client_name: str):
-    response = requests.get(BAI_URL)
-    response.raise_for_status()
-    data = response.text.splitlines()
+def analyze_bai(first_name: str, last_name: str, middle_name: str = "", suffix: str = ""):
+    try:
+        response = requests.get(BAI_URL)
+        response.raise_for_status()
+        data = response.text.splitlines()
 
-    reader = csv.reader(data)
-    header = next(reader)
+        reader = csv.reader(data)
+        header = next(reader)
 
-    used_phrases = set()
+        used_phrases = set()
 
-    for row in reader:
-        name = row[-1].strip()
-        if name.lower() == client_name.lower():
-            responses = row[1:-2]
-            total_score = sum(response_mapping.get(r.strip(), 0) for r in responses)
-            interpretation = get_bai_interpretation(total_score)
+        # Normalize input for comparison
+        input_name = f"{first_name} {middle_name} {last_name} {suffix}".strip().lower()
 
-            if interpretation == "Low Anxiety (0-21)":
+        for row in reader:
+            # Extract and normalize name from the CSV
+            row_name = f"{row[-4]} {row[-3]} {row[-2]} {row[-1]}".strip().lower()
+
+            if row_name == input_name:
+                responses = row[1:-4]  # Exclude timestamp and name fields
+                total_score = sum(response_mapping.get(r.strip(), 0) for r in responses)
+                interpretation = get_bai_interpretation(total_score)
+
+                if interpretation == "Low Anxiety (0-21)":
+                    return {
+                        "client_name": input_name.title(),
+                        "total_score": total_score,
+                        "interpretation": interpretation,
+                        "message": f"The results indicate {input_name.title()} has low anxiety levels, with no further concerns."
+                    }
+
+                primary_impression = f"The analysis suggests {input_name.title()} may be experiencing {interpretation.lower()}."
+                additional_impressions = [
+                    get_random_phrase("Anxiety", used_phrases),
+                    get_random_phrase("Trauma & PTSD", used_phrases),
+                    get_random_phrase("Youth Mental Health Test", used_phrases)
+                ]
+
                 return {
-                    "client_name": client_name,
+                    "client_name": input_name.title(),
                     "total_score": total_score,
                     "interpretation": interpretation,
-                    "message": f"The results indicate {client_name} has low anxiety levels, with no further concerns."
+                    "primary_impression": primary_impression,
+                    "additional_impressions": additional_impressions
                 }
 
-            primary_impression = f"The analysis suggests {client_name} may be experiencing {interpretation.lower()}."
-            additional_impressions = [
-                get_random_phrase("Anxiety", used_phrases),
-                get_random_phrase("Trauma & PTSD", used_phrases),
-                get_random_phrase("Youth Mental Health Test", used_phrases)
-            ]
-
-            return {
-                "client_name": client_name,
-                "total_score": total_score,
-                "interpretation": interpretation,
-                "primary_impression": primary_impression,
-                "additional_impressions": additional_impressions
-            }
-
-    raise HTTPException(status_code=404, detail=f"Client '{client_name}' not found.")
+        raise HTTPException(status_code=404, detail=f"Client '{input_name}' not found.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing BAI data: {e}")
 
 handler = Mangum(app)
