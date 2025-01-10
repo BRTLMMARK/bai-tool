@@ -62,33 +62,21 @@ def analyze_bai(first_name: str, last_name: str, middle_name: str = "", suffix: 
         reader = csv.reader(data)
         header = next(reader)
 
-        used_phrases = set()
-
-        # Normalize input for comparison
-        input_name = f"{first_name} {middle_name} {last_name} {suffix}".strip().lower()
+        input_name = f"{first_name} {middle_name} {last_name} {suffix}".strip()
 
         for row in reader:
-            # Extract and normalize name from the CSV
-            row_name = f"{row[-4]} {row[-3]} {row[-2]} {row[-1]}".strip().lower()
+            row_name = f"{row[-4]} {row[-3]} {row[-2]} {row[-1]}".strip()
 
-            if row_name == input_name:
-                responses = row[1:-4]  # Exclude timestamp and name fields
+            if row_name.lower() == input_name.lower():
+                responses = row[1:-4]
                 total_score = sum(response_mapping.get(r.strip(), 0) for r in responses)
                 interpretation = get_bai_interpretation(total_score)
 
-                if interpretation == "Low Anxiety (0-21)":
-                    return {
-                        "client_name": input_name.title(),
-                        "total_score": total_score,
-                        "interpretation": interpretation,
-                        "message": f"The results indicate {input_name.title()} has low anxiety levels, with no further concerns."
-                    }
-
                 primary_impression = f"The analysis suggests {input_name.title()} may be experiencing {interpretation.lower()}."
                 additional_impressions = [
-                    get_random_phrase("Anxiety", used_phrases),
-                    get_random_phrase("Trauma & PTSD", used_phrases),
-                    get_random_phrase("Youth Mental Health Test", used_phrases)
+                    "Further evaluation may be needed for Anxiety symptoms.",
+                    "Symptoms of Trauma or PTSD were noted.",
+                    "Youth Mental Health factors may require attention."
                 ]
 
                 return {
