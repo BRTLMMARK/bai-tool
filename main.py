@@ -37,7 +37,7 @@ def get_bai_interpretation(score):
     else:
         return "Severe Anxiety (36+)"
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "ok", "message": "PHQ-9 Tool API is running and accessible."}
 
