@@ -1,11 +1,22 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import requests
 import csv
 import json
 import random
 from mangum import Mangum
 
+# Initialize FastAPI app
 app = FastAPI()
+
+# Add CORS middleware to allow cross-origin requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (use specific domains in production)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all HTTP headers
+)
 
 BAI_URL = "https://docs.google.com/spreadsheets/d/1f7kaFuhCv6S_eX4EuIrlhZFDR7W5MhQpJSXHznlpJEk/export?format=csv"
 
@@ -39,7 +50,7 @@ def get_bai_interpretation(score):
 
 @app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
-    return {"status": "ok", "message": "PHQ-9 Tool API is running and accessible."}
+    return {"status": "ok", "message": "BAI Tool API is running and accessible."}
 
 @app.get("/analyze")
 def analyze_bai(client_name: str):
