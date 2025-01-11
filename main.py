@@ -72,19 +72,37 @@ def analyze_bai(first_name: str, last_name: str, middle_name: str = "", suffix: 
                 total_score = sum(response_mapping.get(r.strip(), 0) for r in responses)
                 interpretation = get_bai_interpretation(total_score)
 
-                primary_impression = f"The analysis suggests {input_name.title()} may be experiencing {interpretation.lower()}."
-                additional_impressions = [
-                    "Further evaluation may be needed for Anxiety symptoms.",
-                    "Symptoms of Trauma or PTSD were noted.",
-                    "Youth Mental Health factors may require attention."
-                ]
+                # Primary impression
+                primary_impression = (
+                    "The client may have mild or no anxiety concerns."
+                    if interpretation == "Low Anxiety (0-21)"
+                    else "The client might be experiencing anxiety or related concerns."
+                )
+
+                # Additional impressions (only for significant concerns)
+                additional_impressions = []
+                tool_recommendations = []
+
+                if interpretation != "Low Anxiety (0-21)":
+                    additional_impressions = [
+                        "Further evaluation may be needed for Anxiety symptoms.",
+                        "Symptoms of Trauma or PTSD were noted.",
+                        "Youth Mental Health factors may require attention."
+                    ]
+
+                    tool_recommendations = [
+                        "Tools for Anxiety",
+                        "Tools for Trauma & PTSD",
+                        "Tools for Youth Mental Health"
+                    ]
 
                 return {
                     "client_name": input_name.title(),
                     "total_score": total_score,
                     "interpretation": interpretation,
                     "primary_impression": primary_impression,
-                    "additional_impressions": additional_impressions
+                    "additional_impressions": additional_impressions,
+                    "tool_recommendations": tool_recommendations
                 }
 
         raise HTTPException(status_code=404, detail=f"Client '{input_name}' not found.")
